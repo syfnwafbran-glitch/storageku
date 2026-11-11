@@ -505,6 +505,26 @@ input[readonly]{background:rgba(13,40,30,.04);color:var(--muted)}
   .tilt{transform:none!important}
   .px{transform:none!important}
 }
+/* ===== Login & daftar: muat satu layar tanpa scroll ===== */
+.auth{height:100vh;height:100dvh;min-height:0;overflow:hidden}
+.auth-side{padding:clamp(20px,4vh,44px) clamp(22px,4vw,52px);gap:clamp(10px,2vh,24px);overflow:hidden}
+.auth-side h2{font-size:clamp(22px,3.6vh,32px)}
+.auth-side p{margin-top:clamp(6px,1.2vh,12px)}
+.auth-illus{flex:1;min-height:0;max-width:none;display:grid;place-items:center;margin:0}
+.auth-illus svg{width:100%;height:100%;max-height:420px}
+.auth-points{position:relative;z-index:2}
+.auth-main{overflow-y:auto;padding:clamp(16px,3vh,32px) 20px}
+.auth-card{padding:clamp(20px,3.5vh,30px);gap:clamp(10px,1.8vh,18px)}
+.auth-card h1{font-size:clamp(20px,3vh,24px)}
+.auth-card input{height:clamp(38px,5vh,42px)}
+.auth-card .btn.primary{height:clamp(40px,5.4vh,46px)!important}
+@media (max-width:900px){
+  .auth{display:flex;flex-direction:column}
+  .auth-side{flex:none;padding:14px 18px;flex-direction:row;align-items:center}
+  .auth-side>*:not(.brand){display:none}
+  .auth-main{flex:1;min-height:0;align-items:center;padding:16px}
+  .auth-card{padding:22px 18px}
+}
 </style>
 </head>
 <body>
@@ -526,7 +546,7 @@ input[readonly]{background:rgba(13,40,30,.04);color:var(--muted)}
   <section class="auth-side">
     <div class="brand" style="color:#fff"><span class="brand-mark" id="auth-logo"></span>Storageku</div>
     <div>
-      <h2>Kontrol stok gudang sembako, tercatat rapi setiap hari.</h2>
+      <h2>Control Your inventory,tercatat rapi setiap hari.</h2>
       <p>Catat barang masuk dan keluar, pantau stok secara langsung, dan dapatkan peringatan sebelum barang habis.</p>
     </div>
     <div class="auth-illus px" id="auth-illus" style="--d:10"></div>
@@ -697,8 +717,8 @@ const ic = (n, cls = '') => `<svg class="ic ${cls}" viewBox="0 0 24 24" fill="no
    Koneksi Supabase
    ========================================================= */
 // ▼▼▼ ISI DUA BARIS INI dengan data dari Supabase: Project Settings → API (atau Data API) ▼▼▼
-const SUPABASE_URL = '';       // contoh: 'https://abcdefghijkl.supabase.co'
-const SUPABASE_ANON_KEY = '';  // "anon public" key atau "publishable" key (BUKAN service_role / secret key)
+const SUPABASE_URL = 'https://lfxplefhcexricncutos.supabase.co';      
+const SUPABASE_ANON_KEY = 'sb_publishable_xhJZ3emroLhsK2WuKc9IVg_Gr8GaxwW';  
 // ▲▲▲ Jika dibiarkan kosong, aplikasi akan menampilkan form untuk mengisinya di peramban. ▲▲▲
 
 let sb = null, channel = null, rtState = 'connecting';
@@ -2132,7 +2152,6 @@ function hideBoot() { const b = $('#boot'); if (b.hidden) return; b.style.transi
   $('#auth-logo').innerHTML = ic('logo');
   $('#auth-pending .stat-ic').innerHTML = ic('clock');
   $('#auth-illus').innerHTML = isoScene();
-  $('#auth-points').innerHTML = [['in', 'Stok otomatis dari transaksi'], ['bell', 'Peringatan stok minimum'], ['report', 'Laporan Excel & PDF']].map(([i, t]) => `<div>${ic(i)}<span>${t}</span></div>`).join('');
   const cfg = getConfig();
   if (!window.supabase || !window.supabase.createClient) { hideBoot(); showAuth('connect'); return authErr('f-connect', 'Pustaka Supabase gagal dimuat. Periksa koneksi internet lalu muat ulang halaman.'); }
   if (!cfg) { hideBoot(); return showAuth('connect'); }
