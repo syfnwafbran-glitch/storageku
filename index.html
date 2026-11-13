@@ -781,7 +781,7 @@ const ic = (n, cls = '') => `<svg class="ic ${cls}" viewBox="0 0 24 24" fill="no
    ========================================================= */
 // ▼▼▼ ISI DUA BARIS INI dengan data dari Supabase: Project Settings → API (atau Data API) ▼▼▼
 const SUPABASE_URL = 'https://lfxplefhcexricncutos.supabase.co';       // contoh: 'https://abcdefghijkl.supabase.co'
-const SUPABASE_ANON_KEY = 'sb_publishable_xhJZ3emroLhsK2WuKc9IVg_Gr8GaxwW';  // "anon public" key atau "publishable" key (BUKAN service_role / secret key)
+const SUPABASE_ANON_KEY = '';  // "anon public" key atau "publishable" key (BUKAN service_role / secret key)
 // ▲▲▲ Jika dibiarkan kosong, aplikasi akan menampilkan form untuk mengisinya di peramban. ▲▲▲
 
 let sb = null, channel = null, rtState = 'connecting';
@@ -902,7 +902,8 @@ const UI = {
   riwayat: { q: '', type: '', from: '', to: '', page: 1 },
   laporan: { tab: 'stok', from: firstOfMonth(), to: todayStr(), cat: '' }
 };
-const cats = () => (S.settings.categories && S.settings.categories.length) ? S.settings.categories : DEFAULT_CATS;
+// Kategori mengikuti barang yang sudah ditambahkan (tidak ada daftar bawaan)
+const cats = () => [...new Set(S.items.map(i => String(i.category || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'id'));
 const units = () => (S.settings.units && S.settings.units.length) ? S.settings.units : DEFAULT_UNITS;
 const isAdmin = () => S.me && S.me.role === 'admin';
 function status(it) { const s = Number(it.stock) || 0, m = Number(it.min) || 0; if (s <= 0) return 'habis'; if (s <= m) return 'menipis'; return 'aman'; }
@@ -1482,6 +1483,7 @@ function renderDashboard() {
     <div>
       <span class="hero-eyebrow">${ic('clock')}<span id="hero-time">${nowLabel()}</span></span>
       <h1>${greet()}, ${esc(first)}</h1>
+      <p class="lead">${low.length ? `Ada ${low.length} barang yang menyentuh batas minimum. Periksa widget stok minimum sebelum melayani pesanan berikutnya.` : 'Semua stok berada di atas batas minimum. Gudang siap melayani pesanan hari ini.'}</p>
       <div class="hero-chips">
         <div class="hero-chip">${ic('in')}<div><b>${tIn}</b><small>Masuk hari ini</small></div></div>
         <div class="hero-chip">${ic('out')}<div><b>${tOut}</b><small>Keluar hari ini</small></div></div>
@@ -1654,7 +1656,7 @@ function itemForm(it) {
   return `<form id="f-item" novalidate data-id="${esc(it.id || '')}"><div class="form-grid">
     <div class="field"><label for="it-sku">Kode barang (SKU) <em>*</em></label><input id="it-sku" class="mono" value="${esc(it.sku)}" placeholder="mis. BRS-001" autocapitalize="characters" spellcheck="false"><small class="err"></small></div>
     <div class="field"><label for="it-name">Nama barang <em>*</em></label><input id="it-name" value="${esc(it.name)}" placeholder="mis. Beras Premium 25 kg"><small class="err"></small></div>
-    <div class="field"><label for="it-cat">Kategori <em>*</em></label><select id="it-cat"><option value="">Pilih kategori</option>${catOpts.map(c => `<option ${it.category === c ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select><small class="err"></small></div>
+    <div class="field"><label for="it-cat">Kategori <em>*</em></label><input id="it-cat" list="it-cat-list" maxlength="40" autocomplete="off" value="${esc(it.category)}" placeholder="${catOpts.length ? 'Ketik atau pilih kategori' : 'mis. Beras & Biji-bijian'}"><datalist id="it-cat-list">${catOpts.map(c => `<option value="${esc(c)}"></option>`).join('')}</datalist><small class="hint">${catOpts.length ? 'Pilih kategori yang sudah ada atau ketik kategori baru.' : 'Ketik nama kategori. Kategori baru otomatis tersimpan bersama barang.'}</small><small class="err"></small></div>
     <div class="field"><label for="it-unit">Satuan <em>*</em></label><select id="it-unit"><option value="">Pilih satuan</option>${unitOpts.map(u => `<option ${it.unit === u ? 'selected' : ''}>${esc(u)}</option>`).join('')}</select><small class="err"></small></div>
     <div class="field"><label for="it-buy">Harga beli (Rp) <em>*</em></label><input id="it-buy" type="number" min="0" step="any" inputmode="decimal" value="${it.buy ?? ''}" placeholder="0"><small class="err"></small></div>
     <div class="field"><label for="it-sell">Harga jual (Rp)</label><input id="it-sell" type="number" min="0" step="any" inputmode="decimal" value="${it.sell ?? ''}" placeholder="Opsional"><small class="err"></small></div>
@@ -1674,13 +1676,15 @@ async function saveItem(f) {
   clearErrs(f);
   const id = f.dataset.id, isNew = !id;
   const v = k => $('#' + k, f).value.trim();
-  const sku = v('it-sku').toUpperCase(), name = v('it-name'), category = v('it-cat'), unit = v('it-unit'), loc = v('it-loc');
+  const sku = v('it-sku').toUpperCase(), name = v('it-name'), unit = v('it-unit'), loc = v('it-loc');
+  let category = v('it-cat').replace(/\s+/g, ' ');
+  const sameCat = cats().find(c => c.toLowerCase() === category.toLowerCase()); if (sameCat) category = sameCat;
   const buyS = v('it-buy'), sellS = v('it-sell'), stockS = v('it-stock'), minS = v('it-min');
   let bad = false; const err = (k, m) => { fieldErr(f, k, m); bad = true; };
   if (!/^[A-Z0-9][A-Z0-9._-]{1,29}$/.test(sku)) err('it-sku', 'Gunakan 2–30 karakter: huruf, angka, titik, strip, garis bawah.');
   else if (S.items.some(i => i.sku.toUpperCase() === sku && i.id !== id)) err('it-sku', 'Kode ini sudah dipakai barang lain.');
   if (name.length < 2 || name.length > 100) err('it-name', 'Nama barang 2–100 karakter.');
-  if (!category) err('it-cat', 'Pilih kategori.');
+  if (category.length < 2 || category.length > 40) err('it-cat', 'Isi kategori (2–40 karakter).');
   if (!unit) err('it-unit', 'Pilih satuan.');
   const buy = Number(buyS); if (buyS === '' || !isFinite(buy) || buy < 0) err('it-buy', 'Isi harga beli (angka 0 atau lebih).');
   let sell = null; if (sellS !== '') { sell = Number(sellS); if (!isFinite(sell) || sell < 0) err('it-sell', 'Harga jual harus angka 0 atau lebih.'); }
@@ -1716,32 +1720,46 @@ async function deleteItem(id) {
   catch (e) { toast(dbErrMsg(e), 'error'); }
 }
 function openCatModal() {
-  let cs = [...cats()], us = [...units()];
-  const m = openModal({ title: 'Kelola Kategori & Satuan', body: '<div id="cat-body"></div>',
-    footer: `<button class="btn" data-act="modal-close">Batal</button><button class="btn primary" id="cat-save">${ic('check')}Simpan</button>` });
+  let us = [...units()];
+  const m = openModal({ title: 'Kelola Kategori & Satuan', icon: 'tag', body: '<div id="cat-body"></div>',
+    footer: `<button class="btn" data-act="modal-close">Tutup</button><button class="btn primary" id="cat-save">${ic('check')}Simpan Satuan</button>` });
   const draw = () => {
-    const used = new Set(S.items.map(i => i.category)), usedU = new Set(S.items.map(i => i.unit));
+    const cs = cats(), usedU = new Set(S.items.map(i => i.unit));
     $('#cat-body', m.el).innerHTML = `
-      <div class="field"><label>Kategori barang</label><div class="tag-list">${cs.map((c, i) => `<span class="tag">${esc(c)}<button type="button" data-rm-cat="${i}" ${used.has(c) ? `title="Dipakai ${S.items.filter(x => x.category === c).length} barang" disabled style="opacity:.35;cursor:not-allowed"` : 'title="Hapus"'} aria-label="Hapus ${esc(c)}">${ic('x')}</button></span>`).join('')}</div>
-        <div class="inline-add"><input id="cat-new" placeholder="Kategori baru" maxlength="40"><button type="button" class="btn" id="cat-add">${ic('plus')}Tambah</button></div><small class="hint">Kategori yang masih dipakai barang tidak dapat dihapus.</small></div>
+      <div class="field"><label>Kategori barang</label>
+        ${cs.length ? `<div class="tag-list">${cs.map(c => `<span class="tag" style="padding-right:12px">${esc(c)} <b class="muted" style="font-weight:600">${S.items.filter(x => x.category === c).length}</b></span>`).join('')}</div>` : '<p class="muted" style="font-size:13px">Belum ada kategori. Kategori muncul otomatis saat Anda menambah barang.</p>'}
+        <small class="hint">Kategori dibuat otomatis dari barang dan hilang sendiri bila tidak ada barang yang memakainya.</small></div>
+      ${cs.length ? `<div class="field"><label for="cat-old">Ganti nama kategori</label><div class="inline-add" style="flex-wrap:wrap"><select id="cat-old" style="flex:1;min-width:150px">${cs.map(c => `<option>${esc(c)}</option>`).join('')}</select><input id="cat-new" placeholder="Nama baru" maxlength="40" style="flex:1;min-width:150px"><button type="button" class="btn" id="cat-rename">${ic('edit')}Ganti</button></div><small class="hint">Semua barang dalam kategori itu ikut diperbarui.</small></div>` : ''}
       <div class="field"><label>Satuan</label><div class="tag-list">${us.map((u, i) => `<span class="tag">${esc(u)}<button type="button" data-rm-unit="${i}" ${usedU.has(u) ? 'disabled style="opacity:.35;cursor:not-allowed" title="Sedang dipakai"' : 'title="Hapus"'} aria-label="Hapus ${esc(u)}">${ic('x')}</button></span>`).join('')}</div>
         <div class="inline-add"><input id="unit-new" placeholder="Satuan baru (mis. renteng)" maxlength="20"><button type="button" class="btn" id="unit-add">${ic('plus')}Tambah</button></div></div>`;
   };
   draw();
   m.el.addEventListener('click', async e => {
-    const rc = e.target.closest('[data-rm-cat]'), ru = e.target.closest('[data-rm-unit]');
-    if (rc && !rc.disabled) { cs.splice(+rc.dataset.rmCat, 1); draw(); }
+    const ru = e.target.closest('[data-rm-unit]');
     if (ru && !ru.disabled) { us.splice(+ru.dataset.rmUnit, 1); draw(); }
-    if (e.target.closest('#cat-add')) { const v = $('#cat-new', m.el).value.trim(); if (!v) return; if (cs.some(c => c.toLowerCase() === v.toLowerCase())) return toast('Kategori sudah ada.', 'warn'); cs.push(v); draw(); $('#cat-new', m.el).focus(); }
     if (e.target.closest('#unit-add')) { const v = $('#unit-new', m.el).value.trim().toLowerCase(); if (!v) return; if (us.includes(v)) return toast('Satuan sudah ada.', 'warn'); us.push(v); draw(); $('#unit-new', m.el).focus(); }
+    const rn = e.target.closest('#cat-rename');
+    if (rn) {
+      const old = $('#cat-old', m.el).value, nv = $('#cat-new', m.el).value.trim().replace(/\s+/g, ' ');
+      if (nv.length < 2) return toast('Isi nama kategori baru (minimal 2 karakter).', 'warn');
+      if (nv === old) return;
+      const target = cats().find(c => c !== old && c.toLowerCase() === nv.toLowerCase()) || nv;
+      setBusy(rn, true, 'Mengganti…');
+      try {
+        const { data, error } = await sb.from('items').update({ category: target }).eq('category', old).select();
+        if (error) throw error; if (!data || !data.length) throw { code: '42501' };
+        data.forEach(r => applyRow('items', r));
+        toast(`Kategori <b>${esc(old)}</b> diganti menjadi <b>${esc(target)}</b> (${data.length} barang).`); draw();
+      } catch (er) { toast(dbErrMsg(er), 'error'); setBusy(rn, false); }
+    }
     if (e.target.closest('#cat-save')) {
-      if (!cs.length || !us.length) return toast('Minimal harus ada satu kategori dan satu satuan.', 'warn');
+      if (!us.length) return toast('Minimal harus ada satu satuan.', 'warn');
       const btn = $('#cat-save', m.el); setBusy(btn, true);
-      try { const { data, error } = await sb.from('settings').update({ categories: cs, units: us, updated_at: new Date().toISOString() }).eq('id', 1).select().maybeSingle(); if (error) throw error; if (!data) throw { code: '42501' }; applyRow('settings', data); toast('Kategori dan satuan disimpan.'); m.close(true); }
+      try { const { data, error } = await sb.from('settings').update({ units: us, updated_at: new Date().toISOString() }).eq('id', 1).select().maybeSingle(); if (error) throw error; if (!data) throw { code: '42501' }; applyRow('settings', data); toast('Satuan disimpan.'); m.close(true); }
       catch (er) { toast(dbErrMsg(er), 'error'); } finally { setBusy(btn, false); }
     }
   });
-  m.el.addEventListener('keydown', e => { if (e.key === 'Enter' && (e.target.id === 'cat-new' || e.target.id === 'unit-new')) { e.preventDefault(); $(e.target.id === 'cat-new' ? '#cat-add' : '#unit-add', m.el).click(); } });
+  m.el.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.id === 'unit-new') { e.preventDefault(); $('#unit-add', m.el).click(); } if (e.key === 'Enter' && e.target.id === 'cat-new') { e.preventDefault(); $('#cat-rename', m.el).click(); } });
 }
 
 /* =========================================================
@@ -2163,7 +2181,7 @@ function validateBackup(o) {
 function toRestorePayload(d) {
   const idMap = {};
   const items = d.items.map(i => { const id = isUuid(i.id) ? i.id : crypto.randomUUID(); idMap[i.id] = id;
-    return { id, sku: String(i.sku).toUpperCase(), name: i.name, category: i.category || cats()[0], unit: i.unit || 'pcs', buy: Number(i.buy) || 0, sell: (i.sell === null || i.sell === undefined || i.sell === '') ? null : Number(i.sell), stock: round2(i.stock), min: Number(i.min) || 0, location: i.location || '-', created_at: new Date(i.createdAt || Date.now()).toISOString() }; });
+    return { id, sku: String(i.sku).toUpperCase(), name: i.name, category: i.category || cats()[0] || 'Umum', unit: i.unit || 'pcs', buy: Number(i.buy) || 0, sell: (i.sell === null || i.sell === undefined || i.sell === '') ? null : Number(i.sell), stock: round2(i.stock), min: Number(i.min) || 0, location: i.location || '-', created_at: new Date(i.createdAt || Date.now()).toISOString() }; });
   const transactions = d.trx.map(t => ({ date: t.date, ts: new Date(t.ts || (t.date + 'T12:00:00')).toISOString(), type: t.type, item_id: idMap[t.itemId] || (isUuid(t.itemId) ? t.itemId : null),
     sku: t.sku, name: t.name, unit: t.unit, category: t.category, qty: round2(t.qty), stock_before: round2(t.before), stock_after: Math.max(0, round2(t.after)), party: t.party || '-', note: t.note || '',
     user_id: isUuid(t.user) ? t.user : null, user_name: t.userName || t.user || null }));
