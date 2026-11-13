@@ -1,0 +1,26 @@
+{
+  "name": "Storageku · Manajemen Stok Gudang",
+  "short_name": "Storageku",
+  "description": "Kelola stok gudang kebutuhan pokok: barang masuk, barang keluar, riwayat, dan laporan secara real-time.",
+  "lang": "id",
+  "dir": "ltr",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#052e22",
+  "theme_color": "#052e22",
+  "categories": ["business", "productivity"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Catat Barang Masuk", "short_name": "Barang Masuk", "url": "./#masuk", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Catat Barang Keluar", "short_name": "Barang Keluar", "url": "./#keluar", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Data Barang", "short_name": "Barang", "url": "./#barang", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] }
+  ]
+}

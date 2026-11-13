@@ -5,6 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Storageku</title>
 <meta name="theme-color" content="#052e22">
+<meta name="description" content="Storageku: sistem manajemen stok gudang kebutuhan pokok.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Storageku">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
@@ -156,6 +164,15 @@ button,input,select,textarea{font:inherit;color:inherit}
   .auth-card{padding:20px 18px;border-radius:22px}
   .auth-scene::after{background:linear-gradient(180deg,rgba(246,250,248,.5),transparent 60%)}
 }
+.pill.install{display:inline-flex;align-items:center;gap:6px;border-color:var(--em-600);color:var(--em-700)}
+.pill.install .ic{width:15px;height:15px}
+#net-banner{position:fixed;left:50%;top:84px;pointer-events:none;width:max-content;transform:translateX(-50%);z-index:90;display:flex;align-items:center;gap:10px;padding:9px 16px;border-radius:30px;background:#0d1c16;color:#fff;font-size:13px;font-weight:600;box-shadow:var(--sh-lg);animation:dropIn .3s var(--ease);max-width:calc(100vw - 24px)}
+#net-banner .ic{width:16px;height:16px;color:#fbbf24}
+#net-banner.ok .ic{color:var(--em-400)}
+.install-steps{display:grid;gap:12px;margin:0;padding:0;list-style:none;counter-reset:st}
+.install-steps li{display:flex;gap:12px;align-items:flex-start;counter-increment:st}
+.install-steps li::before{content:counter(st);flex:none;width:26px;height:26px;border-radius:50%;background:var(--em-50);color:var(--em-700);font-weight:800;font-size:13px;display:grid;place-items:center}
+@media (max-width:700px){.pill.install span{display:none}.pill.install{padding:0 10px}}
 @media (prefers-reduced-motion: reduce){.cs-drift,.cs-sun,.cs-rays,.cs-awning,.cs-umb,.cs-glow,.cs-flick,.cs-cloud,.cs-plane,.cs-steam,.cs-blink,.cs-car,.cs-wheel,.cs-bob,.cs-sway,.cs-win,.cs-birds,.cs-wing,.cs-walk,.cs-step,.cs-leg{animation:none!important}.cs-plane.p1{transform:translate(900px,-10px)}.cs-steam{opacity:.6}}
 
 /* ---------- Shell ---------- */
@@ -594,7 +611,7 @@ input[readonly]{background:rgba(13,40,30,.04);color:var(--muted)}
   <header class="auth-top">
     <div class="brand"><span class="brand-mark" id="auth-logo"></span>Storageku</div>
     <div class="auth-tag" aria-hidden="true"><span><i></i>Stok real-time</span><span><i></i>Barang masuk &amp; keluar</span><span><i></i>Laporan Excel &amp; PDF</span></div>
-    <div class="auth-top-actions"><button type="button" class="pill dark" data-act="auth-go" data-m="login">Masuk</button><button type="button" class="pill" data-act="auth-go" data-m="signup">Daftar</button></div>
+    <div class="auth-top-actions"><button type="button" class="pill install" id="install-btn" data-act="install-app" hidden aria-label="Instal aplikasi Storageku"></button><button type="button" class="pill dark" data-act="auth-go" data-m="login">Masuk</button><button type="button" class="pill" data-act="auth-go" data-m="signup">Daftar</button></div>
   </header>
   <div class="auth-points" id="auth-points"></div>
   <section class="auth-main">
@@ -690,6 +707,7 @@ input[readonly]{background:rgba(13,40,30,.04);color:var(--muted)}
   <nav class="bottom-nav" id="bottom-nav" aria-label="Navigasi cepat"></nav>
 </div>
 
+<div id="net-banner" role="status" hidden></div>
 <div id="modal-root"></div>
 <div id="toasts" aria-live="polite"></div>
 
@@ -2190,7 +2208,7 @@ const ACTIONS = {
   'nav-close': () => document.body.classList.remove('nav-open'),
   'modal-close': a => { const w = a.closest('.modal-wrap'); w && w._api.close(); },
   'bell': () => { const p = $('#notif-panel'); const open = p.hidden; closePanels(); if (open) { renderNotif(); p.hidden = false; } },
-  'user-menu': () => { const p = $('#user-panel'); const open = p.hidden; closePanels(); if (open) { p.innerHTML = `<div style="padding:8px 10px 10px;border-bottom:1px solid var(--line-2);margin-bottom:4px"><b>${esc(S.me.name)}</b><div class="muted" style="font-size:12px">${esc(S.me.email || '')} · ${S.me.role === 'admin' ? 'Admin' : 'Operator'}</div></div><button data-act="pw-change">${ic('key')}Ubah kata sandi</button>${getConfig() && !getConfig().fixed ? `<button data-act="reconnect">${ic('db')}Ganti koneksi Supabase</button>` : ''}<button data-act="logout">${ic('logout')}Keluar</button>`; p.hidden = false; } },
+  'user-menu': () => { const p = $('#user-panel'); const open = p.hidden; closePanels(); if (open) { p.innerHTML = `<div style="padding:8px 10px 10px;border-bottom:1px solid var(--line-2);margin-bottom:4px"><b>${esc(S.me.name)}</b><div class="muted" style="font-size:12px">${esc(S.me.email || '')} · ${S.me.role === 'admin' ? 'Admin' : 'Operator'}</div></div><button data-act="pw-change">${ic('key')}Ubah kata sandi</button>${canInstall() ? `<button data-act="install-app">${ic('download')}Instal aplikasi</button>` : ''}${getConfig() && !getConfig().fixed ? `<button data-act="reconnect">${ic('db')}Ganti koneksi Supabase</button>` : ''}<button data-act="logout">${ic('logout')}Keluar</button>`; p.hidden = false; } },
   'pw-change': () => { closePanels(); openPasswordModal(); },
   'logout': () => logout(),
   'restock': a => { closePanels(); UI.tx.in.prefill = a.dataset.id; if (location.hash === '#masuk') route(true); else location.hash = '#masuk'; },
@@ -2311,12 +2329,57 @@ document.addEventListener('pointerdown', e => {
 setInterval(() => { const el = $('#hero-time'); if (el) el.textContent = nowLabel(); }, 30000);
 
 /* =========================================================
+   PWA: instalasi aplikasi, service worker, status koneksi
+   ========================================================= */
+let installPrompt = null;
+const isStandalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const canInstall = () => !isStandalone() && (!!installPrompt || isIOS());
+function refreshInstallUI() {
+  const b = $('#install-btn'); if (!b) return;
+  b.innerHTML = ic('download') + '<span>Instal</span>';
+  b.hidden = !canInstall();
+}
+addEventListener('beforeinstallprompt', e => { e.preventDefault(); installPrompt = e; refreshInstallUI(); });
+addEventListener('appinstalled', () => { installPrompt = null; refreshInstallUI(); toast('Storageku terpasang. Buka dari ikon di layar utama atau desktop.'); });
+ACTIONS['install-app'] = async () => {
+  closePanels();
+  if (installPrompt) {
+    installPrompt.prompt();
+    const { outcome } = await installPrompt.userChoice;
+    if (outcome === 'accepted') installPrompt = null;
+    refreshInstallUI(); return;
+  }
+  const ios = isIOS();
+  openModal({ title: 'Instal Storageku', size: 'sm', icon: 'download',
+    body: ios
+      ? `<p class="muted">Di iPhone/iPad, pasang lewat Safari:</p><ol class="install-steps"><li><span>Buka halaman ini di <b>Safari</b>.</span></li><li><span>Ketuk tombol <b>Bagikan</b> (kotak dengan panah ke atas) di bawah layar.</span></li><li><span>Pilih <b>Tambahkan ke Layar Utama</b>, lalu ketuk <b>Tambah</b>.</span></li></ol>`
+      : `<p class="muted">Browser ini belum menampilkan tombol instal otomatis. Coba cara berikut:</p><ol class="install-steps"><li><span><b>Chrome/Edge di Android:</b> buka menu ⋮ lalu pilih <b>Instal aplikasi</b> atau <b>Tambahkan ke layar utama</b>.</span></li><li><span><b>Chrome/Edge di laptop:</b> klik ikon instal di ujung kanan kolom alamat, atau menu ⋮ → <b>Simpan dan bagikan → Instal halaman sebagai aplikasi</b>.</span></li></ol>`,
+    footer: `<button class="btn primary" data-act="modal-close">Mengerti</button>` });
+};
+let netTimer;
+function showNet(online) {
+  const b = $('#net-banner'); clearTimeout(netTimer);
+  b.className = online ? 'ok' : '';
+  b.innerHTML = online ? ic('check') + 'Koneksi internet kembali. Data disegarkan.' : ic('alert') + 'Anda sedang offline. Data dan transaksi baru bisa disimpan setelah internet tersambung.';
+  b.hidden = false;
+  if (online) netTimer = setTimeout(() => { b.hidden = true; }, 3500);
+}
+addEventListener('offline', () => showNet(false));
+addEventListener('online', () => { showNet(true); if (S.me && sb) loadAll().then(queueRender).catch(() => {}); });
+if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
+  addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').catch(() => {}); });
+}
+
+/* =========================================================
    Boot
    ========================================================= */
 function hideBoot() { const b = $('#boot'); if (b.hidden) return; b.style.transition = 'opacity .4s ease'; b.style.opacity = '0'; setTimeout(() => { b.hidden = true; }, 400); }
 (async function boot() {
   $('#auth-logo').innerHTML = ic('logo');
   $('#auth-pending .stat-ic').innerHTML = ic('clock');
+  refreshInstallUI();
+  if (!navigator.onLine) showNet(false);
   renderCityBg(); addEventListener('resize', () => { clearTimeout(window._cityT); window._cityT = setTimeout(renderCityBg, 200); });
   $('#auth-points').innerHTML = [['in', 'Stok otomatis dari transaksi'], ['bell', 'Peringatan stok minimum'], ['report', 'Laporan Excel & PDF']].map(([i, t]) => `<div>${ic(i)}<span>${t}</span></div>`).join('');
   const cfg = getConfig();

@@ -92,6 +92,18 @@ Setelah semua karyawan terdaftar, pendaftaran bisa ditutup di **Authentication �
 
 ---
 
+## Pasang sebagai aplikasi (PWA)
+
+Storageku bisa dipasang seperti aplikasi, dengan ikon di layar utama dan tampilan layar penuh:
+
+- **Android (Chrome/Edge):** buka situsnya, lalu ketuk tombol **Instal** di bar atas halaman login atau pilih menu ⋮ → **Instal aplikasi**.
+- **Laptop (Chrome/Edge):** klik tombol **Instal**, atau ikon instal di ujung kanan kolom alamat.
+- **iPhone/iPad (Safari):** ketuk **Bagikan** → **Tambahkan ke Layar Utama**.
+
+Aplikasi yang terpasang selalu memakai versi terbaru dari GitHub Pages. Saat offline, aplikasi tetap terbuka dan menampilkan pemberitahuan. Transaksi baru bisa disimpan setelah internet kembali.
+
+Jika suatu saat tampilan lama "menempel" di perangkat, naikkan angka `VERSION` di `sw.js` (misalnya `storageku-v2`), lalu commit dan push.
+
 ## Memindahkan data dari Storageku versi claude.ai
 
 1. Di versi claude.ai, buka **Backup & Pemulihan**, lalu klik **Unduh Cadangan**.
