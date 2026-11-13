@@ -1483,7 +1483,6 @@ function renderDashboard() {
     <div>
       <span class="hero-eyebrow">${ic('clock')}<span id="hero-time">${nowLabel()}</span></span>
       <h1>${greet()}, ${esc(first)}</h1>
-      <p class="lead">${low.length ? `Ada ${low.length} barang yang menyentuh batas minimum. Periksa widget stok minimum sebelum melayani pesanan berikutnya.` : 'Semua stok berada di atas batas minimum. Gudang siap melayani pesanan hari ini.'}</p>
       <div class="hero-chips">
         <div class="hero-chip">${ic('in')}<div><b>${tIn}</b><small>Masuk hari ini</small></div></div>
         <div class="hero-chip">${ic('out')}<div><b>${tOut}</b><small>Keluar hari ini</small></div></div>
